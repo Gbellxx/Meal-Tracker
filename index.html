@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7-Day Meal Plan Tracker</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const BAMBU_MEALS = {
+          'Asian Chicken Salad': { calories: 520, protein: 55 },
+          'Skinny Coklat Kacang': { calories: 240, protein: 20 },
+          'Steak & Greens': { calories: 470, protein: 46 },
+          'Chicken Avocado Salad': { calories: 738, protein: 59 },
+          'Honey & Soy Chicken': { calories: 777, protein: 59 },
+          'Bali Barramundi': { calories: 432, protein: 35 },
+          'Beef Pow Pow': { calories: 771, protein: 44 },
+          'Lemongrass Chicken': { calories: 670, protein: 43 }
+        };
+
+        const HOME_MEALS = {
+          'Greek Yogurt + Whey + Berries': { calories: 280, protein: 30 },
+          'Protein Smoothie': { calories: 300, protein: 32 },
+          'Greek Yogurt + Whey + Chia': { calories: 270, protein: 30 },
+          '2 Scrambled Eggs + Spinach': { calories: 200, protein: 18 },
+          'Grilled Chicken + Pumpkin + Spinach': { calories: 400, protein: 45 },
+          'Barramundi + Pumpkin + Broccoli': { calories: 420, protein: 35 },
+          'Grilled Steak + Pumpkin + Green Beans': { calories: 450, protein: 45 },
+          'Chicken + Broccoli + Sweet Potato': { calories: 250, protein: 30 },
+          'Pan-Seared Steak + Bok Choy + Pumpkin': { calories: 430, protein: 45 },
+          'Protein Bar': { calories: 200, protein: 20 },
+          '2 Boiled Eggs': { calories: 160, protein: 12 },
+          'Boiled Edamame': { calories: 150, protein: 12 },
+          'Handful of Almonds': { calories: 180, protein: 6 },
+          'Bintang Beer': { calories: 148, protein: 1 }
+        };
+
+        const DAILY_MEAL_PLANS = {
+          1: [
+            { type: 'breakfast', name: 'Greek Yogurt + Whey + Berries', calories: 280, protein: 30 },
+            { type: 'lunch', name: 'Asian Chicken Salad', calories: 520, protein: 55 },
+            { type: 'snack', name: 'Protein Bar', calories: 200, protein: 20 },
+            { type: 'dinner', name: 'Grilled Chicken + Pumpkin + Spinach', calories: 400, protein: 45 }
+          ],
+          2: [
+            { type: 'breakfast', name: 'Skinny Coklat Kacang', calories: 240, protein: 20 },
+            { type: 'lunch', name: 'Steak & Greens', calories: 470, protein: 46 },
+            { type: 'snack', name: 'Boiled Edamame', calories: 150, protein: 12 },
+            { type: 'dinner', name: 'Barramundi + Pumpkin + Broccoli', calories: 420, protein: 35 }
+          ],
+          3: [
+            { type: 'breakfast', name: 'Protein Smoothie', calories: 300, protein: 32 },
+            { type: 'lunch', name: 'Chicken Avocado Salad', calories: 738, protein: 59 },
+            { type: 'snack', name: '2 Boiled Eggs', calories: 160, protein: 12 },
+            { type: 'dinner', name: 'Grilled Steak + Pumpkin + Green Beans', calories: 450, protein: 45 }
+          ],
+          4: [
+            { type: 'breakfast', name: 'Greek Yogurt + Whey + Chia', calories: 270, protein: 30 },
+            { type: 'lunch', name: 'Honey & Soy Chicken', calories: 777, protein: 59 },
+            { type: 'snack', name: 'Protein Bar', calories: 200, protein: 20 },
+            { type: 'dinner', name: 'Chicken + Broccoli + Sweet Potato', calories: 250, protein: 30 }
+          ],
+          5: [
+            { type: 'breakfast', name: '2 Scrambled Eggs + Spinach', calories: 200, protein: 18 },
+            { type: 'lunch', name: 'Bali Barramundi', calories: 432, protein: 35 },
+            { type: 'snack', name: 'Skinny Coklat Kacang', calories: 240, protein: 20 },
+            { type: 'dinner', name: 'Grilled Chicken + Pumpkin + Spinach', calories: 450, protein: 45 }
+          ],
+          6: [
+            { type: 'breakfast', name: 'Protein Smoothie', calories: 280, protein: 30 },
+            { type: 'lunch', name: 'Beef Pow Pow', calories: 771, protein: 44 },
+            { type: 'snack', name: 'Handful of Almonds', calories: 180, protein: 6 },
+            { type: 'dinner', name: 'Pan-Seared Steak + Bok Choy + Pumpkin', calories: 430, protein: 45 }
+          ],
+          7: [
+            { type: 'breakfast', name: 'Greek Yogurt + Whey + Berries', calories: 270, protein: 30 },
+            { type: 'lunch', name: 'Lemongrass Chicken', calories: 670, protein: 43 },
+            { type: 'snack', name: 'Protein Bar', calories: 200, protein: 20 },
+            { type: 'dinner', name: 'Barramundi + Pumpkin + Broccoli', calories: 420, protein: 35 }
+          ]
+        };
+
+        function MealTracker() {
+          const loadSavedData = (key, defaultValue) => {
+            try {
+              const saved = localStorage.getItem(key);
+              return saved ? JSON.parse(saved) : defaultValue;
+            } catch {
+              return defaultValue;
+            }
+          };
+
+          const [currentDay, setCurrentDay] = useState(() => loadSavedData('currentDay', 1));
+          const [dayMeals, setDayMeals] = useState(() => loadSavedData('dayMeals', {
+            1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []
+          }));
+          const [daySteps, setDaySteps] = useState(() => loadSavedData('daySteps', {
+            1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0
+          }));
+          const [dayWater, setDayWater] = useState(() => loadSavedData('dayWater', {
+            1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0
+          }));
+          const [dayWeight, setDayWeight] = useState(() => loadSavedData('dayWeight', {
+            1: '', 3: '', 5: ''
+          }));
+          const [dayStretch, setDayStretch] = useState(() => loadSavedData('dayStretch', {
+            1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false
+          }));
+          const [dayWorkout, setDayWorkout] = useState(() => loadSavedData('dayWorkout', {
+            1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false
+          }));
+          const [startWeight] = useState(68.5);
+          const [mealName, setMealName] = useState('');
+          const [calories, setCalories] = useState('');
+          const [protein, setProtein] = useState('');
+          const [mealType, setMealType] = useState('breakfast');
+          const [showPresets, setShowPresets] = useState(false);
+
+          useEffect(() => { localStorage.setItem('currentDay', JSON.stringify(currentDay)); }, [currentDay]);
+          useEffect(() => { localStorage.setItem('dayMeals', JSON.stringify(dayMeals)); }, [dayMeals]);
+          useEffect(() => { localStorage.setItem('daySteps', JSON.stringify(daySteps)); }, [daySteps]);
+          useEffect(() => { localStorage.setItem('dayWater', JSON.stringify(dayWater)); }, [dayWater]);
+          useEffect(() => { localStorage.setItem('dayWeight', JSON.stringify(dayWeight)); }, [dayWeight]);
+          useEffect(() => { localStorage.setItem('dayStretch', JSON.stringify(dayStretch)); }, [dayStretch]);
+          useEffect(() => { localStorage.setItem('dayWorkout', JSON.stringify(dayWorkout)); }, [dayWorkout]);
+
+          const calorieGoal = 1650;
+          const proteinGoal = 120;
+          const stepsGoal = 10000;
+          const waterGoal = 2000;
+
+          const meals = dayMeals[currentDay] || [];
+          const steps = daySteps[currentDay] || 0;
+          const water = dayWater[currentDay] || 0;
+          const weight = dayWeight[currentDay] || '';
+          const stretch = dayStretch[currentDay] || false;
+          const workout = dayWorkout[currentDay] || false;
+          const dailyPlan = DAILY_MEAL_PLANS[currentDay] || [];
+
+          const addMeal = () => {
+            if (mealName && calories && protein) {
+              setDayMeals({
+                ...dayMeals,
+                [currentDay]: [...meals, { 
+                  id: Date.now(), 
+                  name: mealName, 
+                  calories: parseInt(calories),
+                  protein: parseInt(protein),
+                  type: mealType
+                }]
+              });
+              setMealName('');
+              setCalories('');
+              setProtein('');
+            }
+          };
+
+          const addPresetMeal = (name, data) => {
+            setDayMeals({
+              ...dayMeals,
+              [currentDay]: [...meals, {
+                id: Date.now(),
+                name: name,
+                calories: data.calories,
+                protein: data.protein,
+                type: mealType
+              }]
+            });
+            setShowPresets(false);
+          };
+
+          const removeMeal = (id) => {
+            setDayMeals({
+              ...dayMeals,
+              [currentDay]: meals.filter(meal => meal.id !== id)
+            });
+          };
+
+          const updateSteps = (value) => {
+            setDaySteps({ ...daySteps, [currentDay]: parseInt(value) || 0 });
+          };
+
+          const updateWater = (value) => {
+            setDayWater({ ...dayWater, [currentDay]: parseInt(value) || 0 });
+          };
+
+          const updateWeight = (value) => {
+            setDayWeight({ ...dayWeight, [currentDay]: value });
+          };
+
+          const toggleStretch = () => {
+            setDayStretch({ ...dayStretch, [currentDay]: !stretch });
+          };
+
+          const toggleWorkout = () => {
+            setDayWorkout({ ...dayWorkout, [currentDay]: !workout });
+          };
+
+          const addPlannedMeal = (meal) => {
+            const alreadyAdded = meals.some(m => m.name === meal.name && m.type === meal.type);
+            if (!alreadyAdded) {
+              setDayMeals({
+                ...dayMeals,
+                [currentDay]: [...meals, {
+                  id: Date.now(),
+                  name: meal.name,
+                  calories: meal.calories,
+                  protein: meal.protein,
+                  type: meal.type
+                }]
+              });
+            }
+          };
+
+          const removePlannedMeal = (mealToRemove) => {
+            setDayMeals({
+              ...dayMeals,
+              [currentDay]: meals.filter(m => !(m.name === mealToRemove.name && m.type === mealToRemove.type))
+            });
+          };
+
+          const isMealAdded = (plannedMeal) => {
+            return meals.some(m => m.name === plannedMeal.name && m.type === plannedMeal.type);
+          };
+
+          const weekTotalCalories = Object.keys(dayMeals).reduce((total, day) => {
+            const dayTotal = dayMeals[day].reduce((sum, meal) => sum + meal.calories, 0);
+            return total + dayTotal;
+          }, 0);
+
+          const latestWeight = dayWeight[5] || dayWeight[3] || dayWeight[1] || startWeight;
+          const weightChange = latestWeight ? (parseFloat(latestWeight) - startWeight).toFixed(1) : 0;
+          const hasWeightData = dayWeight[1] || dayWeight[3] || dayWeight[5];
+          const weeklyStretch = Object.values(dayStretch).filter(Boolean).length;
+          const weeklyWorkout = Object.values(dayWorkout).filter(Boolean).length;
+
+          const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
+          const totalProtein = meals.reduce((sum, meal) => sum + meal.protein, 0);
+          const caloriesRemaining = calorieGoal - totalCalories;
+          const proteinPercentage = Math.min((totalProtein / proteinGoal) * 100, 100);
+          const stepsPercentage = Math.min((steps / stepsGoal) * 100, 100);
+          const waterPercentage = Math.min((water / waterGoal) * 100, 100);
+
+          const mealsByType = {
+            breakfast: meals.filter(m => m.type === 'breakfast'),
+            lunch: meals.filter(m => m.type === 'lunch'),
+            snack: meals.filter(m => m.type === 'snack'),
+            dinner: meals.filter(m => m.type === 'dinner')
+          };
+
+          const MealIcon = ({ type }) => {
+            const icons = {
+              breakfast: '☕',
+              lunch: '☀️',
+              snack: '🍎',
+              dinner: '🌙'
+            };
+            return <span className="text-pink-400">{icons[type]}</span>;
+          };
+
+          return (
+            <div className="min-h-screen bg-pink-50 p-6" style={{ fontFamily: 'Arial, sans-serif' }}>
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-sm p-8 border border-pink-100">
+                  <h1 className="text-3xl font-light text-gray-700 mb-1">7-Day Meal Plan Tracker</h1>
+                  <p className="text-sm text-gray-500 mb-6 font-light">Track your protein-focused meal plan</p>
+
+                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-gray-600 italic font-light text-center">
+                      Remember: It's only temporary and it's not that hard. You've got this! ✨
+                    </p>
+                  </div>
+
+                  {/* Week Overview */}
+                  <div className="bg-gradient-to-r from-pink-100 to-pink-50 rounded-lg p-4 mb-6 border border-pink-200">
+                    <h2 className="text-sm font-light text-gray-600 mb-3">Week Overview</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 font-light mb-1">Total Calories</p>
+                        <p className="text-2xl font-light text-pink-400">{weekTotalCalories.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500 font-light mt-1">
+                          Avg: {Math.round(weekTotalCalories / Math.max(currentDay, 1))}/day
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-light mb-1">Weight</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl font-light text-pink-400">
+                            {hasWeightData ? `${latestWeight}kg` : `${startWeight}kg`}
+                          </p>
+                          {hasWeightData && (
+                            <p className={`text-sm font-light ${parseFloat(weightChange) < 0 ? 'text-green-500' : parseFloat(weightChange) > 0 ? 'text-orange-400' : 'text-gray-500'}`}>
+                              {parseFloat(weightChange) > 0 ? '+' : ''}{weightChange}kg
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 font-light mt-1">Start: {startWeight}kg</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-light mb-1">Stretch</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl font-light text-pink-400">{weeklyStretch}</p>
+                          <p className="text-sm font-light text-gray-500">/ 3</p>
+                          {weeklyStretch >= 3 && <span className="text-green-500">✓</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-light mb-1">Workout</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl font-light text-pink-400">{weeklyWorkout}</p>
+                          <p className="text-sm font-light text-gray-500">/ 3</p>
+                          {weeklyWorkout >= 3 && <span className="text-green-500">✓</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Day Navigator */}
+                  <div className="flex items-center justify-between mb-6 bg-pink-50 rounded-lg p-4 border border-pink-100">
+                    <button
+                      onClick={() => setCurrentDay(Math.max(1, currentDay - 1))}
+                      disabled={currentDay === 1}
+                      className="p-2 rounded-lg hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ←
+                    </button>
+                    <div className="text-center">
+                      <h2 className="text-xl font-light text-gray-700">Day {currentDay}</h2>
+                      <div className="flex gap-2 mt-2">
+                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                          <button
+                            key={day}
+                            onClick={() => setCurrentDay(day)}
+                            className={`w-7 h-7 rounded-full text-sm ${currentDay === day ? 'bg-pink-300 text-white' : 'bg-white text-gray-600 hover:bg-pink-100 border border-pink-200'}`}
+                          >
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setCurrentDay(Math.min(7, currentDay + 1))}
+                      disabled={currentDay === 7}
+                      className="p-2 rounded-lg hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      →
+                    </button>
+                  </div>
+
+                  {/* Goals */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div className="bg-pink-50 rounded-lg p-3 border border-pink-100">
+                      <div className="flex items-center gap-1 mb-1">
+                        <h3 className="text-xs font-light text-gray-600">Protein</h3>
+                        {totalProtein >= proteinGoal && <span className="ml-auto text-green-500">★</span>}
+                      </div>
+                      <div className="text-lg font-light text-pink-400">{totalProtein}g / {proteinGoal}g</div>
+                      <div className="w-full bg-pink-100 rounded-full h-2 mt-2">
+                        <div className={`h-2 rounded-full transition-all ${totalProtein >= proteinGoal ? 'bg-green-400' : 'bg-pink-300'}`} style={{ width: `${proteinPercentage}%` }} />
+                      </div>
+                    </div>
+
+                    <div className="bg-pink-50 rounded-lg p-3 border border-pink-100">
+                      <div className="flex items-center gap-1 mb-1">
+                        <h3 className="text-xs font-light text-gray-600">Calories</h3>
+                        {totalCalories >= calorieGoal && totalCalories <= calorieGoal * 1.1 && <span className="ml-auto text-green-500">★</span>}
+                        {totalCalories > calorieGoal * 1.1 && <span className="ml-auto text-orange-400">!</span>}
+                      </div>
+                      <div className={`text-lg font-light ${totalCalories >= calorieGoal && totalCalories <= calorieGoal * 1.1 ? 'text-green-400' : totalCalories > calorieGoal * 1.1 ? 'text-orange-400' : 'text-pink-400'}`}>
+                        {totalCalories} / {calorieGoal}
+                      </div>
+                      <div className="text-xs mt-1 text-gray-500 font-light">
+                        {caloriesRemaining >= 0 ? `${caloriesRemaining} left` : `${Math.abs(caloriesRemaining)} over`}
+                      </div>
+                    </div>
+
+                    <div className="bg-pink-50 rounded-lg p-3 border border-pink-100">
+                      <div className="flex items-center gap-1 mb-1">
+                        <h3 className="text-xs font-light text-gray-600">Steps</h3>
+                        {steps >= stepsGoal && <span className="ml-auto">✓</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <button onClick={() => updateSteps(Math.max(0, steps - 1000))} className="text-pink-300 hover:text-pink-400 text-lg">−</button>
+                        <input type="number" value={steps} onChange={(e) => updateSteps(e.target.value)} className="flex-1 text-lg font-light text-pink-400 bg-transparent border-none focus:outline-none text-center" placeholder="0" />
+                        <button onClick={() => updateSteps(steps + 1000)} className="text-pink-300 hover:text-pink-400 text-lg">+</button>
+                      </div>
+                      <div className="w-full bg-pink-100 rounded-full h-2">
+                        <div className={`h-2 rounded-full transition-all ${steps >= stepsGoal ? 'bg-green-400' : 'bg-pink-300'}`} style={{ width: `${stepsPercentage}%` }} />
+                      </div>
+                      <div className="text-xs mt-1 text-gray-500 font-light">Goal: {stepsGoal.toLocaleString()}</div>
+                    </div>
+
+                    <div className="bg-pink-50 rounded-lg p-3 border border-pink-100">
+                      <div className="flex items-center gap-1 mb-1">
+                        <h3 className="text-xs font-light text-gray-600">Water (ml)</h3>
+                        {water >= waterGoal && <span className="ml-auto">✓</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <button onClick={() => updateWater(Math.max(0, water - 250))} className="text-pink-300 hover:text-pink-400 text-lg">−</button>
+                        <input type="number" value={water} onChange={(e) => updateWater(e.target.value)} className="flex-1 text-lg font-light text-pink-400 bg-transparent border-none focus:outline-none text-center" placeholder="0" />
+                        <button onClick={() => updateWater(water + 250)} className="text-pink-300 hover:text-pink-400 text-lg">+</button>
+                      </div>
+                      <div className="w-full bg-pink-100 rounded-full h-2">
+                        <div className={`h-2 rounded-full transition-all ${water >= waterGoal ? 'bg-green-400' : 'bg-pink-300'}`} style={{ width: `${waterPercentage}%` }} />
+                      </div>
+                      <div className="text-xs mt-1 text-gray-500 font-light">Goal: 2,000ml</div>
+                    </div>
+                  </div>
+
+                  {/* Weigh-in */}
+                  {[1, 3, 5].includes(currentDay) && (
+                    <div className="bg-pink-50 rounded-lg p-4 mb-6 border border-pink-100">
+                      <h3 className="text-sm font-light text-gray-600 mb-2">Weigh-in Day {currentDay}</h3>
+                      <div className="flex items-center gap-3">
+                        <input type="number" step="0.1" value={weight} onChange={(e) => updateWeight(e.target.value)} placeholder="Enter weight" className="flex-1 px-3 py-2 border border-pink-200 rounded-lg focus:ring-1 focus:ring-pink-300 text-sm font-light" />
+                        <span className="text-sm text-gray-500 font-light">kg</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Activities */}
+                  <div className="bg-pink-50 rounded-lg p-4 mb-6 border border-pink-100">
+                    <h3 className="text-sm font-light text-gray-600 mb-3">Daily Activities</h3>
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={stretch} onChange={toggleStretch} className="w-4 h-4 text-pink-400 border-pink-300 rounded" />
+                        <span className="text-sm font-light text-gray-700">Stretch</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={workout} onChange={toggleWorkout} className="w-4 h-4 text-pink-400 border-pink-300 rounded" />
+                        <span className="text-sm font-light text-gray-700">Workout</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Meal Plan Checklist */}
+                  <div className="bg-pink-50 rounded-lg p-4 mb-6 border border-pink-100">
+                    <h2 className="text-base font-light text-gray-700 mb-3">Day {currentDay} Meal Plan</h2>
+                    <div className="space-y-2">
+                      {dailyPlan.map((plannedMeal, index) => {
+                        const isChecked = isMealAdded(plannedMeal);
+                        return (
+                          <label key={index} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-pink-100 hover:bg-pink-50 cursor-pointer">
+                            <input type="checkbox" checked={isChecked} onChange={(e) => e.target.checked ? addPlannedMeal(plannedMeal) : removePlannedMeal(plannedMeal)} className="w-4 h-4 text-pink-400 border-pink-300 rounded" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <MealIcon type={plannedMeal.type} />
+                                <span className="text-sm font-light text-gray-700 capitalize">{plannedMeal.type}:</span>
+                                <span className="text-sm font-light text-gray-800">{plannedMeal.name}</span>
+                              </div>
+                              <div className="text-xs text-gray-500 font-light ml-6">
+                                {plannedMeal.calories} cal • {plannedMeal.protein}g protein
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Add Meal */}
+                  <div className="bg-pink-50 rounded-lg p-4 mb-6 border border-pink-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-base font-light text-gray-700">Add Meal</h2>
+                      <button onClick={() => setShowPresets(!showPresets)} className="text-xs text-pink-400 hover:text-pink-500 font-light">
+                        {showPresets ? 'Manual Entry' : 'Quick Add Presets'}
+                      </button>
+                    </div>
+
+                    {showPresets ? (
+                      <div>
+                        <div className="mb-3">
+                          <select value={mealType} onChange={(e) => setMealType(e.target.value)} className="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm font-light bg-white">
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="snack">Snack</option>
+                            <option value="dinner">Dinner</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          <h3 className="font-light text-gray-600 text-xs sticky top-0 bg-pink-50 py-1">Bambu Meals</h3>
+                          {Object.entries(BAMBU_MEALS).map(([name, data]) => (
+                            <button key={name} onClick={() => addPresetMeal(name, data)} className="w-full text-left px-3 py-2 bg-white border border-pink-100 rounded-lg hover:bg-pink-50">
+                              <div className="font-light text-gray-700 text-sm">{name}</div>
+                              <div className="text-xs text-gray-500 font-light">{data.calories} cal • {data.protein}g protein</div>
+                            </button>
+                          ))}
+                          <h3 className="font-light text-gray-600 text-xs sticky top-0 bg-pink-50 py-1 pt-3">Home Meals</h3>
+                          {Object.entries(HOME_MEALS).map(([name, data]) => (
+                            <button key={name} onClick={() => addPresetMeal(name, data)} className="w-full text-left px-3 py-2 bg-white border border-pink-100 rounded-lg hover:bg-pink-50">
+                              <div className="font-light text-gray-700 text-sm">{name}</div>
+                              <div className="text-xs text-gray-500 font-light">{data.calories} cal • {data.protein}g protein</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        <select value={mealType} onChange={(e) => setMealType(e.target.value)} className="px-3 py-2 border border-pink-200 rounded-lg text-sm font-light bg-white">
+                          <option value="breakfast">Breakfast</option>
+                          <option value="lunch">Lunch</option>
+                          <option value="snack">Snack</option>
+                          <option value="dinner">Dinner</option>
+                        </select>
+                        <input type="text" placeholder="Meal name" value={mealName} onChange={(e) => setMealName(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addMeal()} className="px-3 py-2 border border-pink-200 rounded-lg text-sm font-light" />
+                        <input type="number" placeholder="Calories" value={calories} onChange={(e) => setCalories(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addMeal()} className="px-3 py-2 border border-pink-200 rounded-lg text-sm font-light" />
+                        <input type="number" placeholder="Protein (g)" value={protein} onChange={(e) => setProtein(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addMeal()} className="px-3 py-2 border border-pink-200 rounded-lg text-sm font-light" />
+                        <button onClick={addMeal} className="bg-pink-300 text-white px-4 py-2 rounded-lg hover:bg-pink-400 text-sm font-light">
+                          + Add
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Meals List */}
+                  <div className="space-y-3">
+                    {['breakfast', 'lunch', 'snack', 'dinner'].map(type => (
+                      <div key={type}>
+                        <h3 className="text-sm font-light text-gray-600 mb-2 flex items-center gap-2 capitalize">
+                          <MealIcon type={type} />
+                          {type}
+                        </h3>
+                        {mealsByType[type].length === 0 ? (
+                          <p className="text-gray-400 text-xs ml-6 font-light">No {type} added yet</p>
+                        ) : (
+                          <div className="space-y-1 ml-6">
+                            {mealsByType[type].map((meal) => (
+                              <div key={meal.id} className="flex items-center justify-between bg-white border border-pink-100 rounded-lg p-2 hover:shadow-sm">
+                                <div className="flex-1">
+                                  <p className="font-light text-gray-700 text-sm">{meal.name}</p>
+                                  <p className="text-xs text-gray-500 font-light">
+                                    {meal.calories} cal • <span className="text-pink-400">{meal.protein}g protein</span>
+                                  </p>
+                                </div>
+                                <button onClick={() => removeMeal(meal.id)} className="text-pink-300 hover:text-pink-400 p-1">
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MealTracker />);
+    </script>
+</body>
+</html>
